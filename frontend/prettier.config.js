@@ -1,0 +1,17 @@
+export default {
+  endOfLine: 'lf',
+  printWidth: 100,
+  tabWidth: 2,
+  useTabs: false,
+  semi: true,
+  trailingComma: 'es5',
+  singleQuote: true,
+  bracketSpacing: true,
+  bracketSameLine: false,
+  arrowParens: 'always',
+  singleAttributePerLine: false,
+  jsxSingleQuote: false,
+  quoteProps: 'as-needed',
+  htmlWhitespaceSensitivity: 'css',
+  embeddedLanguageFormatting: 'auto',
+};
