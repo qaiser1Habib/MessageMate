@@ -5,7 +5,7 @@ import type { Chat } from './types/ChatType';
 import ChatArea from './components/ChatArea';
 import type { Message } from './types/MessageType';
 import { createChatThread, deleteChat, fetchChats, sendMessageInThread } from './queries/useChats';
-import Sidebar from './components/Sidebar';
+import Sidebar from './components/ChatSidebar';
 
 export const API_BASE_URL = import.meta.env.VITE_API_URL + '/v1/bot-chats' || '';
 
