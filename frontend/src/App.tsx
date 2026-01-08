@@ -5,7 +5,7 @@ import type { Chat } from './types/ChatType';
 import ChatArea from './components/ChatArea';
 import type { Message } from './types/MessageType';
 import Sidebar from './components/sidebar';
-import { createChatThread, deleteChat, fetchChats, sendMessageInThread } from './quries/useChats';
+import { createChatThread, deleteChat, fetchChats, sendMessageInThread } from './queries/useChats';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
