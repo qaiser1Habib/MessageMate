@@ -38,7 +38,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         ) : (
           chats.map((chat) => (
             <div
-              key={chat._id}
+              key={chat?._id}
               className={`p-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition ${
                 activeChat === chat._id ? 'bg-blue-50 border-l-4 border-l-blue-600' : ''
               }`}
