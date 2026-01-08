@@ -38,7 +38,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         <>
           <div className="bg-white border-b border-gray-200 p-3 md:p-4">
             <h2 className="text-lg md:text-xl font-semibold text-gray-800 truncate">
-              {currentChat.title || 'New Chat'}
+              {currentChat.title?.replace(/"/g, '') || 'New Chat'}
             </h2>
           </div>
 

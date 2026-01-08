@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Chat } from './types/ChatType';
 import ChatArea from './components/ChatArea';
 import type { Message } from './types/MessageType';
-import Sidebar from './components/sidebar';
+import Sidebar from './components/Sidebar';
 import { createChatThread, deleteChat, fetchChats, sendMessageInThread } from './queries/useChats';
 
 export const API_BASE_URL = import.meta.env.VITE_API_URL + '/v1/bot-chats' || '';
