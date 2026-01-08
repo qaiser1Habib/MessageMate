@@ -1,18 +1,20 @@
-import { useEffect, useState } from 'react';
-import Sidebar from './components/sidebar';
-import ChatArea from './components/ChatArea';
+import React, { useState, useEffect } from 'react';
+import { MessageSquare, X } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { createChat, deleteChat, fetchChats, sendMessageInThread } from './quries/useChats';
+import type { Chat } from './types/ChatType';
+import ChatArea from './components/ChatArea';
+import type { Message } from './types/MessageType';
+import Sidebar from './components/sidebar';
+import { createChatThread, deleteChat, fetchChats, sendMessageInThread } from './quries/useChats';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
-const CHAT_IDS_KEY = 'chatbot_chat_ids';
+const CHAT_IDS_KEY = 'chatIDs';
 
 export default function ChatBotUI() {
   const queryClient = useQueryClient();
   const [activeChat, setActiveChat] = useState<string>('');
   const [chatIds, setChatIds] = useState<string[]>(() => {
-    // Load chat IDs from localStorage on initial render
     try {
       const stored = localStorage.getItem(CHAT_IDS_KEY);
       return stored ? JSON.parse(stored) : [];
@@ -20,139 +22,203 @@ export default function ChatBotUI() {
       return [];
     }
   });
-  const [streamingResponse, setStreamingResponse] = useState('');
-  const [isSending, setIsSending] = useState(false);
+  const [message, setMessage] = useState<string>('');
+  const [chatMessages, setChatMessages] = useState<Message[]>([]);
+  const [isAnyNewChatCreated, setIsAnyNewChatCreated] = useState(false);
+  const [messageIDToGenerateResponse, setMessageIDToGenerateResponse] = useState<string | null>(
+    null
+  );
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [currentActiveThread, setCurrentActiveThread] = useState<Chat | null>(null);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  // Save chat IDs to localStorage whenever they change
+  // Save chat IDs to localStorage
   useEffect(() => {
     try {
       localStorage.setItem(CHAT_IDS_KEY, JSON.stringify(chatIds));
     } catch (error) {
-      console.error('Failed to save chat IDs to localStorage:', error);
+      console.error('Failed to save chat IDs:', error);
     }
   }, [chatIds]);
 
   // Fetch chats query
-  const { data: chats = [] } = useQuery({
+  const {
+    data: chatThreads = [],
+    isLoading: isChatThreadsFetching,
+    refetch: refetchChats,
+  } = useQuery({
     queryKey: ['chats', chatIds],
     queryFn: () => fetchChats(chatIds),
     enabled: chatIds.length > 0,
   });
 
-  // Set active chat to the first chat when chats are loaded
-  useEffect(() => {
-    if (chats.length > 0 && !activeChat) {
-      setActiveChat(chats[0]._id);
-    }
-  }, [chats, activeChat]);
-
   // Create chat mutation
   const createChatMutation = useMutation({
-    mutationFn: createChat,
-    onSuccess: (newChat) => {
-      // Add new chat ID to the list and save to localStorage
-      setChatIds((prev) => {
-        const updated = [...prev, newChat._id];
-        return updated;
-      });
-      setActiveChat(newChat._id);
-      queryClient.invalidateQueries({ queryKey: ['chats'] });
-    },
+    mutationFn: createChatThread,
   });
 
   // Delete chat mutation
   const deleteChatMutation = useMutation({
     mutationFn: deleteChat,
     onSuccess: (_, deletedId) => {
-      // Remove chat ID from list and update localStorage
-      setChatIds((prev) => {
-        const updated = prev.filter((id) => id !== deletedId);
-        return updated;
-      });
-
-      // Update active chat if the deleted one was active
+      setChatIds((prev) => prev.filter((id) => id !== deletedId));
       if (activeChat === deletedId) {
-        const remainingChats = chats.filter((c) => c._id !== deletedId);
-        setActiveChat(remainingChats.length > 0 ? remainingChats[0]._id : '');
+        const remaining = chatThreads.filter((c) => c._id !== deletedId);
+        setActiveChat(remaining.length > 0 ? remaining[0]._id : '');
       }
-
       queryClient.invalidateQueries({ queryKey: ['chats'] });
     },
   });
 
-  const handleCreateChat = () => {
-    createChatMutation.mutate('Hello! I need assistance.');
-  };
+  // Set current active thread when activeChat changes
+  useEffect(() => {
+    if (chatThreads?.length && activeChat) {
+      const found = chatThreads.find((chat) => chat._id === activeChat);
+      setCurrentActiveThread(found || null);
+    } else {
+      setCurrentActiveThread(null);
+    }
+  }, [activeChat, chatThreads]);
 
-  const handleSendMessage = async (content: string) => {
-    const currentChat = chats.find((c) => c._id === activeChat);
-    if (!currentChat) return;
+  // Redirect to first chat after new chat is created
+  useEffect(() => {
+    if (isAnyNewChatCreated && chatThreads?.length) {
+      setActiveChat(chatThreads[0]._id);
+      setIsAnyNewChatCreated(false);
+    }
+  }, [isAnyNewChatCreated, chatThreads]);
 
-    setIsSending(true);
-    setStreamingResponse('');
+  // Update chat messages when current thread changes
+  useEffect(() => {
+    if (currentActiveThread?._id && chatThreads?.length) {
+      const found = chatThreads.find((chat) => chat._id === currentActiveThread._id);
+      setChatMessages(found?.messages || []);
+    } else {
+      setChatMessages([]);
+    }
+  }, [chatThreads, currentActiveThread]);
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!message.trim()) return;
 
     try {
-      // Add message to thread
-      const response = await fetch(API_BASE_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: content,
-          thread: currentChat.thread,
-        }),
+      setIsSendingMessage(true);
+
+      const response = await createChatMutation.mutateAsync({
+        message,
+        thread: currentActiveThread?.thread,
       });
 
-      const data = await response.json();
-      if (!data.success) throw new Error(data.message);
+      setMessage('');
 
-      // Get the messageID from the last message
-      const messageID = data.data.messages[data.data.messages.length - 1]._id;
+      if (!currentActiveThread?._id) {
+        setIsAnyNewChatCreated(true);
+      }
 
-      // Stream the response
-      const stream = await sendMessageInThread(messageID);
-      const reader = stream.getReader();
-      const decoder = new TextDecoder();
+      const lastMessage = response.messages[response.messages.length - 1];
+
+      setChatMessages((prev) => [...prev, lastMessage]);
+      setMessageIDToGenerateResponse(lastMessage._id);
+
+      if (response._id && !chatIds.includes(response._id)) {
+        setChatIds((prev) => [...prev, response._id]);
+      }
 
       let accumulatedResponse = '';
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
+      await sendMessageInThread(lastMessage._id, (chunk) => {
         accumulatedResponse += chunk;
-        setStreamingResponse(accumulatedResponse);
-      }
 
-      // Refresh chats after streaming completes
-      queryClient.invalidateQueries({ queryKey: ['chats'] });
-    } catch (error) {
-      console.error('Error sending message:', error);
+        setChatMessages((prev) =>
+          prev.map((msg) =>
+            msg._id === lastMessage._id ? { ...msg, reply: accumulatedResponse } : msg
+          )
+        );
+      });
+
+      await refetchChats();
+    } catch (err) {
+      console.error(err);
     } finally {
-      setIsSending(false);
-      setStreamingResponse('');
+      setIsSendingMessage(false);
+      setMessageIDToGenerateResponse(null);
     }
   };
 
-  const currentChat = chats.find((c) => c._id === activeChat);
+  const handleNewChat = () => {
+    setActiveChat('');
+    setCurrentActiveThread(null);
+    setChatMessages([]);
+    setMessage('');
+  };
 
   return (
-    <main className="flex h-screen bg-gray-100">
-      <Sidebar
-        chats={chats}
-        activeChat={activeChat}
-        setActiveChat={setActiveChat}
-        onDeleteChat={(id) => deleteChatMutation.mutate(id)}
-        onCreateChat={handleCreateChat}
-        isCreating={createChatMutation.isPending}
-      />
+    <div className="flex h-screen bg-gray-100 overflow-hidden">
+      {/* Sidebar - Mobile: Slide-in drawer, Desktop: Always visible */}
+      <div className="hidden md:block md:w-64 bg-white border-r border-gray-200 shrink-0">
+        <Sidebar
+          chats={chatThreads}
+          activeChat={activeChat}
+          setActiveChat={setActiveChat}
+          onDeleteChat={(id) => deleteChatMutation.mutate(id)}
+          onNewChat={handleNewChat}
+          isLoading={isChatThreadsFetching}
+        />
+      </div>
+
+      {/* Mobile Sidebar Toggle */}
+      <div className="md:hidden fixed top-4 left-4 z-50">
+        <button
+          onClick={() => setMobileSidebarOpen(true)}
+          className="p-2 bg-white border border-gray-300 rounded-lg shadow-lg"
+        >
+          <MessageSquare size={24} className="text-gray-600" />
+        </button>
+      </div>
+
+      {/* Mobile Sidebar Overlay */}
+      {mobileSidebarOpen && (
+        <>
+          <div
+            className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+            onClick={() => setMobileSidebarOpen(false)}
+          />
+          <div className="md:hidden fixed inset-y-0 left-0 w-80 max-w-[85vw] bg-white z-50 transform transition-transform duration-300">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h2 className="text-lg font-semibold">Chats</h2>
+              <button onClick={() => setMobileSidebarOpen(false)}>
+                <X size={24} />
+              </button>
+            </div>
+            <Sidebar
+              chats={chatThreads}
+              activeChat={activeChat}
+              setActiveChat={(id) => {
+                setActiveChat(id);
+                setMobileSidebarOpen(false);
+              }}
+              onDeleteChat={(id) => deleteChatMutation.mutate(id)}
+              onNewChat={() => {
+                handleNewChat();
+                setMobileSidebarOpen(false);
+              }}
+              isLoading={isChatThreadsFetching}
+            />
+          </div>
+        </>
+      )}
 
       <ChatArea
-        currentChat={currentChat}
+        currentChat={currentActiveThread || undefined}
+        chatMessages={chatMessages}
         onSendMessage={handleSendMessage}
-        isSending={isSending}
-        streamingResponse={streamingResponse}
+        message={message}
+        setMessage={setMessage}
+        isCreatingThread={createChatMutation.isPending}
+        isSendingMessage={isSendingMessage}
+        messageIDToGenerateResponse={messageIDToGenerateResponse}
       />
-    </main>
+    </div>
   );
 }

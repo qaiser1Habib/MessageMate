@@ -1,107 +1,126 @@
-import { Loader2, MessageSquare, Send } from 'lucide-react';
-import type { ChatType } from '../../types/ChatType';
-import React, { useState } from 'react';
+import ScrollToBottom from 'react-scroll-to-bottom';
+import ReactMarkdown from 'react-markdown';
+import { Send, Loader2 } from 'lucide-react';
+import type { Chat } from '../../types/ChatType';
+import type { Message } from '../../types/MessageType';
 
 interface ChatAreaProps {
-  currentChat: ChatType | undefined;
-  onSendMessage: (content: string) => void;
-  isSending: boolean;
-  streamingResponse: string;
+  currentChat: Chat | undefined;
+  chatMessages: Message[];
+  onSendMessage: (e: React.FormEvent) => void;
+  message: string;
+  setMessage: (msg: string) => void;
+  isCreatingThread: boolean;
+  isSendingMessage: boolean;
+  messageIDToGenerateResponse: string | null;
 }
 const ChatArea: React.FC<ChatAreaProps> = ({
   currentChat,
+  chatMessages,
   onSendMessage,
-  isSending,
-  streamingResponse,
+  message,
+  setMessage,
+  isCreatingThread,
+  isSendingMessage,
+  messageIDToGenerateResponse,
 }) => {
-  const [input, setInput] = useState('');
-
-  const handleSend = () => {
-    if (!input.trim()) return;
-    onSendMessage(input);
-    setInput('');
-  };
-
   return (
-    <div className="flex-1 flex flex-col">
-      {currentChat ? (
+    <div className="flex-1 flex flex-col w-full min-w-0">
+      {currentChat && chatMessages.length > 0 ? (
         <>
           {/* Header */}
-          <div className="bg-white border-b border-gray-200 p-4">
-            <h2 className="text-xl font-semibold text-gray-800">
+          <div className="bg-white border-b border-gray-200 p-3 md:p-4">
+            <h2 className="text-lg md:text-xl font-semibold text-gray-800 truncate">
               {currentChat.title || 'New Chat'}
             </h2>
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {currentChat.messages.map((msg, idx) => (
-              <React.Fragment key={msg._id}>
+          <ScrollToBottom className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4">
+            {chatMessages.map((msg) => (
+              <div key={msg._id} className="w-full space-y-3 md:space-y-4">
                 {/* User Message */}
                 <div className="flex justify-end">
-                  <div className="group relative max-w-xl ml-12">
-                    <div className="rounded-lg px-4 py-2 bg-blue-600 text-white">
-                      <p className="text-sm">{msg.message}</p>
-                      <p className="text-xs mt-1 text-blue-100">
-                        {new Date(msg.createdAt || Date.now()).toLocaleTimeString()}
-                      </p>
-                    </div>
+                  <div className="max-w-[85%] md:max-w-2xl py-2 px-3 md:px-4 bg-blue-600 text-white rounded-t-xl rounded-bl-xl">
+                    <h3 className="text-xs md:text-sm font-bold mb-1">You</h3>
+                    <p className="text-xs md:text-sm warp-break-word">{msg.message}</p>
+                    <time className="text-xs opacity-75 mt-1 block">
+                      {new Date(msg.createdAt || Date.now()).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </time>
                   </div>
                 </div>
 
                 {/* Bot Reply */}
-                {(msg.reply || (idx === currentChat.messages.length - 1 && streamingResponse)) && (
-                  <div className="flex justify-start">
-                    <div className="group relative max-w-xl mr-12">
-                      <div className="rounded-lg px-4 py-2 bg-white border border-gray-200 text-gray-800">
-                        <p className="text-sm whitespace-pre-wrap">
-                          {msg.reply || streamingResponse}
-                          {idx === currentChat.messages.length - 1 && isSending && !msg.reply && (
-                            <span className="inline-block ml-1 w-2 h-4 bg-gray-400 animate-pulse" />
-                          )}
-                        </p>
-                        {msg.reply && (
-                          <p className="text-xs mt-1 text-gray-400">
-                            {new Date(msg.createdAt || Date.now()).toLocaleTimeString()}
-                          </p>
-                        )}
+                <div className="flex">
+                  <div className="max-w-[85%] md:max-w-2xl py-2 px-3 md:px-4 bg-gray-100 border border-gray-200 rounded-t-xl rounded-br-xl">
+                    <h3 className="text-xs md:text-sm font-bold text-gray-800 mb-1">Assistant</h3>
+
+                    {msg.reply ? (
+                      <div className="prose max-w-full text-xs md:text-sm wrap-break-word">
+                        <ReactMarkdown>{msg.reply}</ReactMarkdown>
                       </div>
-                    </div>
+                    ) : isSendingMessage && messageIDToGenerateResponse === msg._id ? (
+                      <div className="animate-pulse space-y-2">
+                        <div className="h-2 bg-gray-300 rounded w-full" />
+                        <div className="h-2 bg-gray-300 rounded w-2/3" />
+                        <div className="h-2 bg-gray-300 rounded w-1/2" />
+                      </div>
+                    ) : null}
+
+                    <time className="text-xs text-gray-500 mt-1 block">
+                      {new Date(msg.createdAt || Date.now()).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </time>
                   </div>
-                )}
-              </React.Fragment>
+                </div>
+              </div>
             ))}
-          </div>
+          </ScrollToBottom>
 
           {/* Input */}
-          <div className="bg-white border-t border-gray-200 p-4">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && !isSending && handleSend()}
-                placeholder="Type your message..."
-                disabled={isSending}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-              />
-              <button
-                onClick={handleSend}
-                disabled={isSending}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
-                Send
-              </button>
-            </div>
+          <div className="bg-white border-t border-gray-200 p-3 md:p-4">
+            {isCreatingThread ? (
+              <div className="py-2 md:py-3 px-3 md:px-4 bg-white border border-gray-300 flex items-center gap-2 rounded-xl">
+                <Loader2 className="animate-spin text-blue-600" size={18} />
+                <p className="text-xs md:text-sm text-blue-600">Creating Chat...</p>
+              </div>
+            ) : (
+              <form onSubmit={onSendMessage} className="flex gap-2">
+                <input
+                  type="text"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Type your message..."
+                  disabled={isSendingMessage}
+                  className="flex-1 px-3 py-2 md:px-4 md:py-2 text-sm md:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                />
+                <button
+                  type="submit"
+                  disabled={isSendingMessage || !message?.trim()}
+                  className="px-4 py-2 md:px-6 md:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSendingMessage ? (
+                    <Loader2 size={18} className="animate-spin" />
+                  ) : (
+                    <Send size={18} />
+                  )}
+                  <span className="hidden sm:inline text-sm md:text-base">Send</span>
+                </button>
+              </form>
+            )}
           </div>
         </>
       ) : (
-        <div className="flex-1 flex items-center justify-center text-gray-400">
-          <div className="text-center">
-            <MessageSquare size={48} className="mx-auto mb-4 opacity-50" />
-            <p>Select a chat or create a new one</p>
-          </div>
+        <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 overflow-y-auto">
+          <h4 className="text-2xl md:text-4xl font-medium mb-2">Hi there</h4>
+          <p className="text-sm md:text-base text-gray-500 mb-6 md:mb-8">
+            Use a quick prompt or type your own message to start
+          </p>
         </div>
       )}
     </div>

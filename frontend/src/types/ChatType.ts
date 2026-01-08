@@ -1,10 +1,12 @@
-import type { MessageType } from "./MessageType";
+import type { Message } from "./MessageType";
 
-export interface ChatType {
+
+export interface Chat {
     _id: string;
     title: string;
     thread: string;
-    messages: MessageType[];
-    createdAt: Date;
-    updatedAt: Date;
+    messages: Message[];
+    createdAt: string;
+    updatedAt: string;
+    __v?: number;
 }
