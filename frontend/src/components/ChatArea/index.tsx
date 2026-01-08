@@ -1,162 +1,75 @@
-import { MessageSquare, Trash2, Edit2, Send } from 'lucide-react';
+import { Loader2, MessageSquare, Send } from 'lucide-react';
 import type { ChatType } from '../../types/ChatType';
-import type { MessageType } from '../../types/MessageType';
+import React, { useState } from 'react';
 
 interface ChatAreaProps {
-  chats: ChatType[];
-  setChats: React.Dispatch<React.SetStateAction<ChatType[]>>;
-  activeChat: string;
   currentChat: ChatType | undefined;
-  input: string;
-  setInput: React.Dispatch<React.SetStateAction<string>>;
-  editingMessageId: string | null;
-  setEditingMessageId: React.Dispatch<React.SetStateAction<string | null>>;
-  editingMessageContent: string;
-  setEditingMessageContent: React.Dispatch<React.SetStateAction<string>>;
+  onSendMessage: (content: string) => void;
+  isSending: boolean;
+  streamingResponse: string;
 }
-
-const ChatArea = ({
-  chats,
-  setChats,
-  activeChat,
+const ChatArea: React.FC<ChatAreaProps> = ({
   currentChat,
-  input,
-  setInput,
-  editingMessageId,
-  setEditingMessageId,
-  editingMessageContent,
-  setEditingMessageContent,
-}: ChatAreaProps) => {
-  const sendMessage = () => {
-    if (!input.trim() || !currentChat) return;
+  onSendMessage,
+  isSending,
+  streamingResponse,
+}) => {
+  const [input, setInput] = useState('');
 
-    const userMsg: MessageType = {
-      id: `m${Date.now()}`,
-      content: input,
-      sender: 'user',
-      timestamp: new Date(),
-    };
-
-    const botMsg: MessageType = {
-      id: `m${Date.now() + 1}`,
-      content: 'Thanks for your message! This is a simulated response.',
-      sender: 'bot',
-      timestamp: new Date(),
-    };
-
-    setChats(
-      chats.map((c) =>
-        c.id === activeChat ? { ...c, messages: [...c.messages, userMsg, botMsg] } : c
-      )
-    );
+  const handleSend = () => {
+    if (!input.trim()) return;
+    onSendMessage(input);
     setInput('');
   };
 
-  const deleteMessage = (messageId: string) => {
-    setChats(
-      chats.map((c) =>
-        c.id === activeChat ? { ...c, messages: c.messages.filter((m) => m.id !== messageId) } : c
-      )
-    );
-  };
-
-  const startEditMessage = (message: MessageType) => {
-    setEditingMessageId(message.id);
-    setEditingMessageContent(message.content);
-  };
-
-  const saveEditMessage = () => {
-    setChats(
-      chats.map((c) =>
-        c.id === activeChat
-          ? {
-              ...c,
-              messages: c.messages.map((m) =>
-                m.id === editingMessageId ? { ...m, content: editingMessageContent } : m
-              ),
-            }
-          : c
-      )
-    );
-    setEditingMessageId(null);
-  };
   return (
     <div className="flex-1 flex flex-col">
       {currentChat ? (
         <>
           {/* Header */}
           <div className="bg-white border-b border-gray-200 p-4">
-            <h2 className="text-xl font-semibold text-gray-800">{currentChat.title}</h2>
+            <h2 className="text-xl font-semibold text-gray-800">
+              {currentChat.title || 'New Chat'}
+            </h2>
           </div>
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {currentChat.messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`group relative max-w-xl ${msg.sender === 'user' ? 'ml-12' : 'mr-12'}`}
-                >
-                  {editingMessageId === msg.id ? (
-                    <div className="bg-white border border-gray-300 rounded-lg p-3 shadow-sm">
-                      <textarea
-                        value={editingMessageContent}
-                        onChange={(e) => setEditingMessageContent(e.target.value)}
-                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm resize-none"
-                        rows={3}
-                        autoFocus
-                      />
-                      <div className="flex gap-2 mt-2">
-                        <button
-                          onClick={saveEditMessage}
-                          className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
-                        >
-                          Save
-                        </button>
-                        <button
-                          onClick={() => setEditingMessageId(null)}
-                          className="px-3 py-1 bg-gray-400 text-white text-xs rounded hover:bg-gray-500"
-                        >
-                          Cancel
-                        </button>
+            {currentChat.messages.map((msg, idx) => (
+              <React.Fragment key={msg._id}>
+                {/* User Message */}
+                <div className="flex justify-end">
+                  <div className="group relative max-w-xl ml-12">
+                    <div className="rounded-lg px-4 py-2 bg-blue-600 text-white">
+                      <p className="text-sm">{msg.message}</p>
+                      <p className="text-xs mt-1 text-blue-100">
+                        {new Date(msg.createdAt || Date.now()).toLocaleTimeString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bot Reply */}
+                {(msg.reply || (idx === currentChat.messages.length - 1 && streamingResponse)) && (
+                  <div className="flex justify-start">
+                    <div className="group relative max-w-xl mr-12">
+                      <div className="rounded-lg px-4 py-2 bg-white border border-gray-200 text-gray-800">
+                        <p className="text-sm whitespace-pre-wrap">
+                          {msg.reply || streamingResponse}
+                          {idx === currentChat.messages.length - 1 && isSending && !msg.reply && (
+                            <span className="inline-block ml-1 w-2 h-4 bg-gray-400 animate-pulse" />
+                          )}
+                        </p>
+                        {msg.reply && (
+                          <p className="text-xs mt-1 text-gray-400">
+                            {new Date(msg.createdAt || Date.now()).toLocaleTimeString()}
+                          </p>
+                        )}
                       </div>
                     </div>
-                  ) : (
-                    <>
-                      <div
-                        className={`rounded-lg px-4 py-2 ${
-                          msg.sender === 'user'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-white border border-gray-200 text-gray-800'
-                        }`}
-                      >
-                        <p className="text-sm">{msg.content}</p>
-                        <p
-                          className={`text-xs mt-1 ${msg.sender === 'user' ? 'text-blue-100' : 'text-gray-400'}`}
-                        >
-                          {msg.timestamp.toLocaleTimeString()}
-                        </p>
-                      </div>
-                      <div className="absolute -top-2 right-0 hidden group-hover:flex gap-1">
-                        <button
-                          onClick={() => startEditMessage(msg)}
-                          className="p-1 bg-white border border-gray-300 rounded shadow-sm hover:bg-gray-50"
-                        >
-                          <Edit2 size={12} className="text-gray-600" />
-                        </button>
-                        <button
-                          onClick={() => deleteMessage(msg.id)}
-                          className="p-1 bg-white border border-gray-300 rounded shadow-sm hover:bg-red-50"
-                        >
-                          <Trash2 size={12} className="text-red-600" />
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
+                  </div>
+                )}
+              </React.Fragment>
             ))}
           </div>
 
@@ -167,15 +80,17 @@ const ChatArea = ({
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                onKeyPress={(e) => e.key === 'Enter' && !isSending && handleSend()}
                 placeholder="Type your message..."
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={isSending}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               />
               <button
-                onClick={sendMessage}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
+                onClick={handleSend}
+                disabled={isSending}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Send size={18} />
+                {isSending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
                 Send
               </button>
             </div>

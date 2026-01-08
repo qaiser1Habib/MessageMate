@@ -1,7 +1,7 @@
 
 export interface MessageType {
-    id: string;
-    content: string;
-    sender: 'user' | 'bot';
-    timestamp: Date;
+    _id: string;
+    message: string;
+    reply: string | null;
+    createdAt?: Date;
 }

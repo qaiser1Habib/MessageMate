@@ -1,8 +1,10 @@
 import type { MessageType } from "./MessageType";
 
 export interface ChatType {
-    id: string;
+    _id: string;
     title: string;
+    thread: string;
     messages: MessageType[];
     createdAt: Date;
+    updatedAt: Date;
 }
