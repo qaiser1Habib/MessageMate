@@ -21,7 +21,7 @@ ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
 
 # expose the port the app runs on
-EXPOSE 5030
+EXPOSE 5174
 
 # start the application
 CMD ["npm", "run", "preview"]

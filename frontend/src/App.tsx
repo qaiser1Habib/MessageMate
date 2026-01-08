@@ -7,7 +7,7 @@ import type { Message } from './types/MessageType';
 import Sidebar from './components/sidebar';
 import { createChatThread, deleteChat, fetchChats, sendMessageInThread } from './queries/useChats';
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+export const API_BASE_URL = import.meta.env.VITE_API_URL + '/v1/bot-chats' || '';
 
 const CHAT_IDS_KEY = 'chatIDs';
 

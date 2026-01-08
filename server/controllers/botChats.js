@@ -235,7 +235,7 @@ const sendMessageInThread = async (request, response) => {
     // Send user message to OpenAI
     await openai.beta.threads.messages.create(threadFound.thread, {
       role: 'user',
-      content: `Here is the query from Tourist: ${specificMessage.message}`,
+      content: `Here is the query : ${specificMessage.message}`,
     });
 
     // Set response headers for a streaming response
@@ -253,7 +253,7 @@ const sendMessageInThread = async (request, response) => {
       openai.beta.threads.runs
         .stream(threadFound.thread, {
           assistant_id: openAIAssistantID,
-          instructions: `Please address the user as Tourist`,
+          instructions: `Please address the user as 'Friend' in your responses.`,
         })
         .on('textDelta', (textDelta) => {
           aiMessageContent += textDelta.value; // Accumulate response content
