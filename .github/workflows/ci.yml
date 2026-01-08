@@ -27,7 +27,7 @@ jobs:
         run: npm run lint -- --max-warnings=0
 
       - name: Install frontend dependencies
-        working-directory: website
+        working-directory: frontend
         run: npm ci
 
       - name: Build frontend
