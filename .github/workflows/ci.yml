@@ -31,11 +31,11 @@ jobs:
         run: npm ci
 
       - name: Build frontend
-        working-directory: website
+        working-directory: frontend
         run: npm run build
 
       - name: Build backend image
         run: docker build -t backend ./server
 
       - name: Build frontend image
-        run: docker build -t frontend ./website
+        run: docker build -t frontend ./frontend
