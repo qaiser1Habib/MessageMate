@@ -2,8 +2,8 @@ const sendJsonResponse = (
   response,
   httpCode,
   status = false,
-  message = "No Message To Show!",
-  payload = null
+  message = 'No Message To Show!',
+  payload = null,
 ) => {
   return response
     .status(HTTP_STATUS_CODES.OK)

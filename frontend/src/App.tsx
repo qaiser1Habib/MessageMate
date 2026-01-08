@@ -4,10 +4,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Chat } from './types/ChatType';
 import ChatArea from './components/ChatArea';
 import type { Message } from './types/MessageType';
-import Sidebar from './components/sidebar';
-import { createChatThread, deleteChat, fetchChats, sendMessageInThread } from './quries/useChats';
+import { createChatThread, deleteChat, fetchChats, sendMessageInThread } from './queries/useChats';
+import Sidebar from './components/ChatSidebar';
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+export const API_BASE_URL = import.meta.env.VITE_API_URL + '/v1/bot-chats' || '';
 
 const CHAT_IDS_KEY = 'chatIDs';
 

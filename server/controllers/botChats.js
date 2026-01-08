@@ -1,9 +1,9 @@
-const { OpenAI } = require("openai");
-const botChats = require("../models/botChats.js");
+const { OpenAI } = require('openai');
+const botChats = require('../models/botChats.js');
 const {
   sendJsonResponse,
   checkForMissingKeysInObject,
-} = require("../utils/helpers.js");
+} = require('../utils/helpers.js');
 
 const openai = new OpenAI();
 openai.apiKey = process.env.OPENAI_API_KEY;
@@ -15,7 +15,7 @@ const getChatThreads = async (request, response) => {
     let { chatIds } = request.query;
 
     // Parse chatIds from query if needed
-    if (typeof chatIds === "string") {
+    if (typeof chatIds === 'string') {
       chatIds = JSON.parse(chatIds);
     }
 
@@ -24,8 +24,8 @@ const getChatThreads = async (request, response) => {
         response,
         HTTP_STATUS_CODES.BAD_REQUEST,
         false,
-        "Invalid chat IDs provided!",
-        null
+        'Invalid chat IDs provided!',
+        null,
       );
     }
 
@@ -41,8 +41,8 @@ const getChatThreads = async (request, response) => {
         response,
         HTTP_STATUS_CODES.NOTFOUND,
         false,
-        "No chat threads found!",
-        null
+        'No chat threads found!',
+        null,
       );
     }
 
@@ -50,18 +50,18 @@ const getChatThreads = async (request, response) => {
       response,
       HTTP_STATUS_CODES.OK,
       true,
-      "Success",
-      chatThreads
+      'Success',
+      chatThreads,
     );
   } catch (error) {
     return sendJsonResponse(
       response,
       HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
       false,
-      "Error occurred!",
+      'Error occurred!',
       {
         error: error.message || error,
-      }
+      },
     );
   }
 };
@@ -71,14 +71,14 @@ const createChatThread = async (request, response) => {
     const payload = request.body;
 
     // Check for missing fields in payload
-    const missingFields = checkForMissingKeysInObject(payload, ["message"]);
+    const missingFields = checkForMissingKeysInObject(payload, ['message']);
     if (missingFields) {
       return sendJsonResponse(
         response,
         HTTP_STATUS_CODES.BAD_REQUEST,
         false,
-        `Missing Parameters: ${missingFields.join(", ")}`,
-        null
+        `Missing Parameters: ${missingFields.join(', ')}`,
+        null,
       );
     }
 
@@ -87,8 +87,8 @@ const createChatThread = async (request, response) => {
         response,
         HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
         false,
-        "Assistant is Not Live!",
-        null
+        'Assistant is Not Live!',
+        null,
       );
     }
 
@@ -101,7 +101,7 @@ const createChatThread = async (request, response) => {
             messages: { message: payload.message, reply: null },
           },
         },
-        { new: true }
+        { new: true },
       );
 
       // If the thread exists, we return the updated payload
@@ -110,8 +110,8 @@ const createChatThread = async (request, response) => {
           response,
           HTTP_STATUS_CODES.OK,
           true,
-          "Message added to existing chat",
-          dbPayload
+          'Message added to existing chat',
+          dbPayload,
         );
       }
     }
@@ -123,8 +123,8 @@ const createChatThread = async (request, response) => {
         response,
         HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
         false,
-        "Failed to create thread",
-        null
+        'Failed to create thread',
+        null,
       );
     }
     // Save the new thread with the message
@@ -138,8 +138,8 @@ const createChatThread = async (request, response) => {
       response,
       HTTP_STATUS_CODES.OK,
       true,
-      "New thread created successfully",
-      dbPayload
+      'New thread created successfully',
+      dbPayload,
     );
   } catch (error) {
     console.error(error);
@@ -147,10 +147,10 @@ const createChatThread = async (request, response) => {
       response,
       HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
       false,
-      "Server Error!",
+      'Server Error!',
       {
         error: error.message || error,
-      }
+      },
     );
   }
 };
@@ -160,8 +160,8 @@ const generateSummarizedChatTitle = async (userMessage, botReply) => {
     const prompt = `please generate a short 4 to 5 words summarized Title for chat. user ask this to ${userMessage} here is query reply ${botReply}.`;
 
     completion = await openai.chat.completions.create({
-      messages: [{ role: "system", content: prompt }],
-      model: "gpt-4o",
+      messages: [{ role: 'system', content: prompt }],
+      model: 'gpt-4o',
       temperature: 0.7,
       max_tokens: 100,
     });
@@ -169,10 +169,10 @@ const generateSummarizedChatTitle = async (userMessage, botReply) => {
     if (completion?.choices[0]?.message?.content) {
       return completion;
     } else {
-      return "title Generation::Failure";
+      return 'title Generation::Failure';
     }
   } catch (error) {
-    console.error("Error creating assistant:", error);
+    console.error('Error creating assistant:', error);
   }
 };
 
@@ -181,20 +181,20 @@ const sendMessageInThread = async (request, response) => {
     const payload = request.body;
 
     // Check for missing fields in payload
-    const missingFields = checkForMissingKeysInObject(payload, ["messageID"]);
+    const missingFields = checkForMissingKeysInObject(payload, ['messageID']);
     if (missingFields) {
       return sendJsonResponse(
         response,
         HTTP_STATUS_CODES.BAD_REQUEST,
         false,
-        `Missing Parameters: ${missingFields.join(", ")}`,
-        null
+        `Missing Parameters: ${missingFields.join(', ')}`,
+        null,
       );
     }
 
     // Find thread and specific message using only messageID
     const threadFound = await botChats.findOne({
-      "messages._id": payload?.messageID,
+      'messages._id': payload?.messageID,
     });
 
     if (!threadFound) {
@@ -202,14 +202,14 @@ const sendMessageInThread = async (request, response) => {
         response,
         HTTP_STATUS_CODES.NOTFOUND,
         false,
-        "Thread or message not found",
-        null
+        'Thread or message not found',
+        null,
       );
     }
 
     // Locate the specific message
     const specificMessage = threadFound.messages.find(
-      (message) => message._id.toString() === payload.messageID
+      (message) => message._id.toString() === payload.messageID,
     );
 
     if (!specificMessage) {
@@ -217,8 +217,8 @@ const sendMessageInThread = async (request, response) => {
         response,
         HTTP_STATUS_CODES.NOTFOUND,
         false,
-        "Message not found in the thread",
-        null
+        'Message not found in the thread',
+        null,
       );
     }
 
@@ -227,23 +227,23 @@ const sendMessageInThread = async (request, response) => {
         response,
         HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
         false,
-        "Assistant is Not Live!",
-        null
+        'Assistant is Not Live!',
+        null,
       );
     }
 
     // Send user message to OpenAI
     await openai.beta.threads.messages.create(threadFound.thread, {
-      role: "user",
-      content: `Here is the query from Tourist: ${specificMessage.message}`,
+      role: 'user',
+      content: `Here is the query : ${specificMessage.message}`,
     });
 
     // Set response headers for a streaming response
-    response.setHeader("Content-Type", "text/event-stream");
-    response.setHeader("Cache-Control", "no-cache");
-    response.setHeader("Connection", "keep-alive");
+    response.setHeader('Content-Type', 'text/event-stream');
+    response.setHeader('Cache-Control', 'no-cache');
+    response.setHeader('Connection', 'keep-alive');
 
-    let aiMessageContent = "";
+    let aiMessageContent = '';
 
     const retryLimit = 3; // retry up to 3 times
     let attempt = 0;
@@ -253,16 +253,16 @@ const sendMessageInThread = async (request, response) => {
       openai.beta.threads.runs
         .stream(threadFound.thread, {
           assistant_id: openAIAssistantID,
-          instructions: `Please address the user as Tourist`,
+          instructions: `Please address the user as 'Friend' in your responses.`,
         })
-        .on("textDelta", (textDelta) => {
+        .on('textDelta', (textDelta) => {
           aiMessageContent += textDelta.value; // Accumulate response content
           response.write(textDelta.value);
         })
-        .on("end", async () => {
+        .on('end', async () => {
           let summarizedChatTitle = await generateSummarizedChatTitle(
             specificMessage?.message,
-            aiMessageContent
+            aiMessageContent,
           );
 
           summarizedChatTitle =
@@ -272,24 +272,24 @@ const sendMessageInThread = async (request, response) => {
           await threadFound.save();
 
           await botChats.findOneAndUpdate(
-            { "messages._id": payload.messageID },
+            { 'messages._id': payload.messageID },
             {
               $set: {
-                "messages.$.reply": aiMessageContent,
+                'messages.$.reply': aiMessageContent,
               },
             },
-            { new: true }
+            { new: true },
           );
           response.write(`\n`);
           response.end();
         })
-        .on("error", (error) => {
+        .on('error', (error) => {
           if (attempt < retryLimit) {
             attempt++;
             console.warn(`Retrying streaming... Attempt ${attempt}`);
             startStreaming(); // Retry the stream
           } else {
-            console.error("Error in stream:", error);
+            console.error('Error in stream:', error);
             streamError = true;
             response.write(`data: [ERROR] Stream failed\n\n`);
             response.end();
@@ -304,8 +304,8 @@ const sendMessageInThread = async (request, response) => {
         response,
         HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
         false,
-        "Streaming Error",
-        null
+        'Streaming Error',
+        null,
       );
     }
   } catch (error) {
@@ -313,10 +313,10 @@ const sendMessageInThread = async (request, response) => {
       response,
       HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
       false,
-      "Server Error!",
+      'Server Error!',
       {
         error: error.message || error,
-      }
+      },
     );
   }
 };
@@ -327,15 +327,15 @@ const deleteChatThread = async (request, response) => {
 
     // Check for missing fields in payload
     const missingFields = checkForMissingKeysInObject(request.query, [
-      "chatID",
+      'chatID',
     ]);
     if (missingFields) {
       return sendJsonResponse(
         response,
         HTTP_STATUS_CODES.BAD_REQUEST,
         false,
-        `Missing Parameters: ${missingFields.join(", ")}`,
-        null
+        `Missing Parameters: ${missingFields.join(', ')}`,
+        null,
       );
     }
 
@@ -346,7 +346,7 @@ const deleteChatThread = async (request, response) => {
         response,
         HTTP_STATUS_CODES.NOTFOUND,
         false,
-        "Chat not found or access denied!"
+        'Chat not found or access denied!',
       );
     }
 
@@ -356,18 +356,18 @@ const deleteChatThread = async (request, response) => {
       response,
       HTTP_STATUS_CODES.OK,
       true,
-      "Thread deleted successfully",
-      chatToDelete
+      'Thread deleted successfully',
+      chatToDelete,
     );
   } catch (error) {
     return sendJsonResponse(
       response,
       HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
       false,
-      "Error occurred!",
+      'Error occurred!',
       {
         error: error.message || error,
-      }
+      },
     );
   }
 };
