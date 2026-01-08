@@ -1,137 +1,73 @@
-import { MessageSquare, Plus, Trash2, Edit2, Check, X } from 'lucide-react';
-import type { ChatType } from '../../types/ChatType';
+import { MessageSquare, Plus, Trash2, Loader2 } from 'lucide-react';
+import type { Chat } from '../../types/ChatType';
 
 interface SidebarProps {
-  chats: ChatType[];
-  setChats: React.Dispatch<React.SetStateAction<ChatType[]>>;
+  chats: Chat[];
   activeChat: string;
-  setActiveChat: React.Dispatch<React.SetStateAction<string>>;
-  editingChatId: string | null;
-  setEditingChatId: React.Dispatch<React.SetStateAction<string | null>>;
-  editingChatTitle: string;
-  setEditingChatTitle: React.Dispatch<React.SetStateAction<string>>;
+  setActiveChat: (id: string) => void;
+  onDeleteChat: (chatId: string) => void;
+  onNewChat: () => void;
+  isLoading: boolean;
 }
-const Sidebar = ({
+
+const Sidebar: React.FC<SidebarProps> = ({
   chats,
-  setChats,
   activeChat,
-  editingChatId,
-  setEditingChatId,
-  editingChatTitle,
   setActiveChat,
-  setEditingChatTitle,
-}: SidebarProps) => {
-  const createChat = () => {
-    const newChat: ChatType = {
-      id: Date.now().toString(),
-      title: `Chat ${chats.length + 1}`,
-      messages: [
-        {
-          id: `m${Date.now()}`,
-          content: 'Hello! How can I help you?',
-          sender: 'bot',
-          timestamp: new Date(),
-        },
-      ],
-      createdAt: new Date(),
-    };
-    setChats([...chats, newChat]);
-    setActiveChat(newChat.id);
-  };
-
-  const deleteChat = (chatId: string) => {
-    const filtered = chats.filter((c: ChatType) => c.id !== chatId);
-    setChats(filtered);
-    if (activeChat === chatId && filtered.length > 0) {
-      setActiveChat(filtered[0].id);
-    }
-  };
-  const startEditChat = (chat: ChatType) => {
-    setEditingChatId(chat.id);
-    setEditingChatTitle(chat.title);
-  };
-
-  const saveEditChat = () => {
-    setChats(
-      chats.map((c: ChatType) => (c.id === editingChatId ? { ...c, title: editingChatTitle } : c))
-    );
-    setEditingChatId(null);
-  };
+  onDeleteChat,
+  onNewChat,
+  isLoading,
+}) => {
   return (
-    <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
-      <div className="p-4 border-b border-gray-200">
+    <div className="w-full h-full flex flex-col">
+      <div className="p-3 md:p-4 border-b border-gray-200">
         <button
-          onClick={createChat}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          onClick={onNewChat}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 md:px-4 md:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm md:text-base"
         >
-          <Plus size={20} />
+          <Plus size={18} className="md:w-5 md:h-5" />
           New Chat
         </button>
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {chats.map((chat: ChatType) => (
-          <div
-            key={chat.id}
-            className={`p-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition ${
-              activeChat === chat.id ? 'bg-blue-50 border-l-4 border-l-blue-600' : ''
-            }`}
-          >
-            {editingChatId === chat.id ? (
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={editingChatTitle}
-                  onChange={(e) => setEditingChatTitle(e.target.value)}
-                  className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
-                  autoFocus
-                />
-                <button onClick={saveEditChat} className="text-green-600 hover:text-green-700">
-                  <Check size={16} />
-                </button>
-                <button
-                  onClick={() => setEditingChatId(null)}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between">
-                <div onClick={() => setActiveChat(chat.id)} className="flex-1">
+        {isLoading ? (
+          <div className="flex justify-center items-center p-4">
+            <Loader2 className="animate-spin text-gray-400" size={24} />
+          </div>
+        ) : (
+          chats.map((chat) => (
+            <div
+              key={chat._id}
+              className={`p-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition ${
+                activeChat === chat._id ? 'bg-blue-50 border-l-4 border-l-blue-600' : ''
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div onClick={() => setActiveChat(chat._id)} className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <MessageSquare size={16} className="text-gray-400" />
-                    <span className="font-medium text-sm truncate">{chat.title}</span>
+                    <MessageSquare size={14} className="text-gray-400 shrink-0" />
+                    <span className="font-medium text-xs md:text-sm truncate">
+                      {chat.title?.replace(/"/g, '') || 'New Chat'}
+                    </span>
                   </div>
                   <p className="text-xs text-gray-500 mt-1">{chat.messages.length} messages</p>
                 </div>
-                <div className="flex gap-1">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      startEditChat(chat);
-                    }}
-                    className="p-1 text-gray-400 hover:text-blue-600 transition"
-                  >
-                    <Edit2 size={14} />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteChat(chat.id);
-                    }}
-                    className="p-1 text-gray-400 hover:text-red-600 transition"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteChat(chat._id);
+                  }}
+                  className="p-1.5 text-gray-400 hover:text-red-600 transition shrink-0"
+                >
+                  <Trash2 size={14} />
+                </button>
               </div>
-            )}
-          </div>
-        ))}
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
 };
-
 export default Sidebar;
