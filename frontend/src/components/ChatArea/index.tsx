@@ -105,9 +105,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
       ) : (
         <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 overflow-y-auto">
           <h4 className="text-2xl md:text-4xl font-medium mb-2">Hi there</h4>
-          <p className="text-sm md:text-base text-gray-500 mb-6 md:mb-8">
-            Use a quick prompt or type your own message to start
-          </p>
+          <p className="text-sm md:text-base text-gray-500 mb-6 md:mb-8">Where should we start?</p>
           <div className="w-full md:w-2xl">
             <ChatForm
               onSendMessage={onSendMessage}
