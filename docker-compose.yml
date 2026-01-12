@@ -1,23 +1,48 @@
 version: "3.9"
 
 services:
+  monogo:
+    image: mongo:6.0
+    container_name: mongo
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - "message-mate"
+
   backend:
-    build: ./server
+    build:
+      context: ./server
+      dockerfile: Dockerfile
     container_name: backend
-    restart: always
+    restart: unless-stopped
     env_file:
       - ./server/.env
     ports:
       - "5010:5010"
+    depends_on:
+      - monogo
+    networks:
+      - "message-mate"
 
   frontend:
     build:
       context: ./frontend
+      dockerfile: Dockerfile
       args:
-        VITE_API_URL: http://16.170.230.76:5010
+        VITE_API_URL: http://localhost:5010
     container_name: frontend
-    restart: always
+    restart: unless-stopped
     ports:
       - "5174:5174"
     depends_on:
       - backend
+    networks:
+      - "message-mate"
+
+volumes:
+  mongo-data:
+
+networks:
+  message-mate:
+    driver: bridge
