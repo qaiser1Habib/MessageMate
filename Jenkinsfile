@@ -30,16 +30,16 @@ pipeline {
             """
             }
         }
-        // stage('build dockers images') {
-        //     steps {
-        //         sh """
-        //         echo "Building Backend Docker Image..."
-        //         docker build -t ${BACKEND_IMAGE} ./server
-        //         echo "Building Frontend Docker Image..."
-        //         docker build -t ${FRONTEND_IMAGE} ./frontend --build-arg VITE_API_URL=http://localhost:${PORT}
-        //         """
-        //     }
-        // }
+        stage('build images') {
+        steps {
+            sh """
+            docker build --no-cache -t message-mate-frontend ./frontend \
+            --build-arg VITE_API_URL=http://backend:5010
+            docker build -t message-mate-backend ./server
+            """
+            }
+        }
+
 
         stage("cleanup") {
         steps {
