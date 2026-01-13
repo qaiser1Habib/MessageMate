@@ -41,6 +41,17 @@ pipeline {
         //     }
         // }
 
+        stage("cleanup") {
+        steps {
+            sh '''
+            echo "Cleaning up old containers..."
+            docker compose down || true
+            docker container prune -f
+            '''
+            }
+        }
+
+
         stage("run with docker compose"){
             steps {
             sh '''
