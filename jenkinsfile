@@ -6,6 +6,9 @@ pipeline {
         BACKEND_IMAGE ="message-mate-backend:jenkins"
         PORT = "5010"
         MONGO_DB_CONNECTION_URL= "mongodb://mongo:27017/messageMate"
+
+        OPENAI_API_KEY = credentials('openai-api-key')
+        OPEN_AI_ASSISTANT_ID = credentials('openai-assistant-id')
     }
 
     stages {
