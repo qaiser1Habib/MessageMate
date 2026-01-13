@@ -30,26 +30,25 @@ pipeline {
             """
             }
         }
-        stage('build dockers images') {
-            steps {
-                sh """
-                echo "Building Backend Docker Image..."
-                docker build -t ${BACKEND_IMAGE} ./server
-                echo "Building Frontend Docker Image..."
-                docker build -t ${FRONTEND_IMAGE} ./frontend --build-arg VITE_API_URL=http://localhost:${PORT}
-                """
-            }
-        }
+        // stage('build dockers images') {
+        //     steps {
+        //         sh """
+        //         echo "Building Backend Docker Image..."
+        //         docker build -t ${BACKEND_IMAGE} ./server
+        //         echo "Building Frontend Docker Image..."
+        //         docker build -t ${FRONTEND_IMAGE} ./frontend --build-arg VITE_API_URL=http://localhost:${PORT}
+        //         """
+        //     }
+        // }
 
         stage("run with docker compose"){
             steps {
-                sh '''
-                echo "Starting messageMate app with docker compose..."
-                # Add --no-build to skip the Buildx requirement
-                docker compose up -d --no-build
-                echo "Showing running containers..."
-                docker ps
-                '''
+            sh '''
+            echo "Starting messageMate app with docker compose..."
+            docker compose up -d
+            echo "Showing running containers..."
+            docker ps
+            '''
             }
         }
     }
