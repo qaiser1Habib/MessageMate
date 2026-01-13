@@ -34,7 +34,7 @@ pipeline {
         steps {
             sh """
             docker build --no-cache -t message-mate-frontend ./frontend \
-            --build-arg VITE_API_URL=http://backend:5010
+            --build-arg VITE_API_URL=http://localhost:5010
             docker build -t message-mate-backend ./server
             """
             }
