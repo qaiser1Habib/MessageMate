@@ -19,39 +19,36 @@ pipeline {
         }
         stage('prepare .env') {
             steps {
-                sh '''
-                mkdir -p server
-                cat > server/.env <<EOF
-                PORT=${PORT}
-                MONGO_DB_CONNECTION_URL=${MONGO_DB_CONNECTION_URL}
-                OPENAI_API_KEY=${OPENAI_API_KEY}
-                OPEN_AI_ASSISTANT_ID=${OPEN_AI_ASSISTANT_ID}
-                EOF
-                '''
+            sh """
+            mkdir -p server
+            cat > server/.env <<EOF
+            PORT=${PORT}
+            MONGO_DB_CONNECTION_URL=${MONGO_DB_CONNECTION_URL}
+            OPENAI_API_KEY=${OPENAI_API_KEY}
+            OPEN_AI_ASSISTANT_ID=${OPEN_AI_ASSISTANT_ID}
+            EOF
+            """
             }
         }
         stage('build dockers images') {
             steps {
-                sh '''
+                sh """
                 echo "Building Backend Docker Image..."
                 docker build -t ${BACKEND_IMAGE} ./server
                 echo "Building Frontend Docker Image..."
                 docker build -t ${FRONTEND_IMAGE} ./frontend --build-arg VITE_API_URL=http://localhost:${PORT}
-                '''
+                """
             }
         }
 
         stage("run with docker compose"){
             steps {
                 sh '''
-                echo "starring messageMate app with docker compose..."
-                docker compose up -d
-                echo "showing running containers..."
+                echo "Starting messageMate app with docker compose..."
+                # Add --no-build to skip the Buildx requirement
+                docker compose up -d --no-build
+                echo "Showing running containers..."
                 docker ps
-                echo "---messageMate backend logs---"
-                docker logs backend || true
-                echo "---messageMate frontend logs---"
-                docker logs frontend || true
                 '''
             }
         }
