@@ -8,7 +8,7 @@ pipeline {
         MONGO_DB_CONNECTION_URL= "mongodb://mongo:27017/messageMate"
 
         OPENAI_API_KEY = credentials('openai-api-key')
-        OPEN_AI_ASSISTANT_ID = credentials('openai-assistant-id')
+        OPEN_AI_ASSISTANT_ID = credentials('OPEN_AI_ASSISTANT_ID')
     }
 
     stages {
