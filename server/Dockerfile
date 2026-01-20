@@ -1,7 +1,7 @@
-# use official Node.js runtime as a parent image. Alpine Linux is a security-oriented, lightweight Linux distribution based on musl libc and busybox.
+# use official Node.js runtime image which give all required tools and libraries.
 FROM node:20-alpine
 
-# set working directory
+# create a folder where the app code will be stored
 WORKDIR /app
 
 # install build dependencies for native modules like bcrypt
