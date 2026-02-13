@@ -89,14 +89,19 @@ export default function ChatBotUI() {
   }, [isAnyNewChatCreated, chatThreads]);
 
   // Update chat messages when current thread changes
-  useEffect(() => {
-    if (currentActiveThread?._id && chatThreads?.length) {
-      const found = chatThreads.find((chat) => chat._id === currentActiveThread._id);
-      setChatMessages(found?.messages || []);
-    } else {
-      setChatMessages([]);
+useEffect(() => {
+  if (currentActiveThread?._id && chatThreads?.length) {
+    const found = chatThreads.find((chat) => chat._id === currentActiveThread._id);
+    const newMessages = found?.messages || [];
+    
+    // Only update if messages actually changed
+    if (JSON.stringify(newMessages) !== JSON.stringify(chatMessages)) {
+      setChatMessages(newMessages);
     }
-  }, [chatThreads, currentActiveThread]);
+  } else if (chatMessages.length > 0) {
+    setChatMessages([]);
+  }
+}, [currentActiveThread?._id]); // Still only depend on the ID
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
