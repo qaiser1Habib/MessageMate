@@ -5,7 +5,7 @@ const http = require('http');
 const cors = require('cors');
 const mongoose = require('mongoose');
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
 const app = express();
 const server = http.createServer(app);
@@ -28,10 +28,8 @@ mongoose
 
 app.use('/api/v1/bot-chats', require('./routes/botChats.js'));
 
-app.get('/api/', (req, res) => res.send('Welcome to the server'));
-app.get('/api/v1', (req, res) =>
-  res.send('You are now accessing API version:1'),
-);
+app.get('/', (req, res) => res.send('Welcome to the server'));
+app.get('/v1', (req, res) => res.send('You are now accessing API version:1'));
 
 server.listen(PORT, () => {
   console.info(`Server running on http://localhost:${PORT}`);

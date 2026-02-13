@@ -1,25 +1,28 @@
-# use official Node.js runtime image which give all required tools and libraries.
-FROM node:20-alpine
+# Stage 1
+FROM node:21 AS backend-builder
 
-# create a folder where the app code will be stored
+# setup the working dir
 WORKDIR /app
 
-# install build dependencies for native modules like bcrypt
-RUN apk add --no-cache python3 make g++
-
-# copy package.json and package-lock.json
-COPY package*.json ./
-
-# install dependencies
-RUN npm install
-
-# copy the rest of the application code
+# code
 COPY . .
 
-# expose the port the app runs on
-EXPOSE 5010
+# packages install
+RUN npm i
 
-# start the application
+# Stage 2
+FROM node:21-slim
+
+# setup the working dir
+WORKDIR /app
+
+# copy the above stage as compressed
+COPY --from=backend-builder /app .
+
+COPY .env.docker .env
+
+# Port
+EXPOSE 8080
+
+# App
 CMD ["npm", "start"]
-
-

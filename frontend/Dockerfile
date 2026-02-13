@@ -1,27 +1,32 @@
-# use official Node.js runtime as a parent image. Alpine Linux is a security-oriented, lightweight Linux distribution based on musl libc and busybox.
-FROM node:20-alpine
+# ------------------- Stage 1: Build Stage ------------------------------
+FROM node:21 AS frontend-builder
 
-# set working directory
+# Set the working directory to /app
 WORKDIR /app
 
-# copy package.json and package-lock.json
+# Copy the package.json and package-lock.json for dependency installation
 COPY package*.json ./
 
-# install dependencies
+# Install dependencies
 RUN npm install
 
-# copy the rest of the application code
+# Copy the rest of the application code
 COPY . .
 
-# set environment variables
-ARG VITE_API_URL
-ENV VITE_API_URL=$VITE_API_URL
+# ------------------- Stage 2: Final Stage ------------------------------
+FROM node:21-slim
 
-# build the application
-RUN npm run build
+# Set the working directory to /app
+WORKDIR /app
 
-# expose the port the app runs on
+# Copy built assets and dependencies from frontend-builder stage
+COPY --from=frontend-builder /app .
+
+# Copy the .env.sample file to .env.local
+COPY .env.docker .env.local
+
+# Expose port 5173 for the Node.js application
 EXPOSE 5174
 
-# start the application
-CMD ["npm", "run", "preview"]
+# Define the default command to run the application in development mode
+CMD ["npm", "run", "dev", "--", "--host"]
